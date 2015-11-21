@@ -2,9 +2,13 @@
 using UnityEngine.Networking;
 using System.Collections;
 
+public enum CharacterType { Solider, Mage, Hacker };
+
 public class Character : NetworkBehaviour {
 
-    public enum CharacterType { Solider, Mage, Hacker };
+    public CharacterType type = CharacterType.Solider;
+    public int lane = 1; // from top to bottom 0, 1, 2
+    public bool topLane = false;
 
     public float Speed = 5;
     public bool isLeft;
@@ -14,6 +18,7 @@ public class Character : NetworkBehaviour {
 
     [SyncVar]
     public int health = 10;
+    [SyncVar]
     public bool isMoving = true;
     private bool attackNexus = false;
 
@@ -31,10 +36,12 @@ public class Character : NetworkBehaviour {
 	// Use this for initialization
 	void Start () {
         // pick a random color
-        Color newColor = new Color(Random.value, Random.value, Random.value, 1.0f);
+        //Color newColor = new Color(Random.value, Random.value, Random.value, 1.0f);
 
         // apply it on current object's material
-        //gameObject.GetComponent<MeshRenderer>().material.color = newColor;     
+        //gameObject.GetComponent<MeshRenderer>().material.color = newColor; 
+        ParticleSystem exp = GetComponentInChildren<ParticleSystem>();
+        exp.Stop();
 	}
 	
 	// Update is called once per frame
@@ -76,13 +83,30 @@ public class Character : NetworkBehaviour {
             if (canDamage)
             {
                 int damageGoingToGive = Random.Range(this.damagePowerMin, this.damagePowerMax);
-                if (!attackNexus)
+                if (!attackNexus && type == CharacterType.Solider)
                 {
-                    int enemyHealth = EnemyCharacter.health;
+                    //int enemyHealth = EnemyCharacter.health;
                     EnemyCharacter.TakeDamage(damageGoingToGive);
-                    Debug.Log("Enemy health " + EnemyCharacter.health);
+                    if (EnemyCharacter != null)
+                    {
+                        Debug.Log("Enemy health " + EnemyCharacter.health);
+                    }
                 }
-                else
+                else if (type == CharacterType.Mage)
+                {
+                    if (lane == 1)
+                    {
+                        if (topLane)
+                        {
+                            topLane = false;
+                        }
+                        else
+                        {
+                            topLane = true;
+                        }
+                    }
+                }
+                else 
                 {
                     Nexus[] nexuses = GameObject.FindObjectsOfType<Nexus>();
                     foreach (Nexus nexus in nexuses) {
@@ -130,8 +154,8 @@ public class Character : NetworkBehaviour {
             this.isMoving = false;
             if (collCharacter.isLeft != this.isLeft)
             {
-                if (EnemyCharacter == null)
-                {
+                if (EnemyCharacter == null )
+                {   
                     this.EnemyCharacter = collCharacter;
                 }
             }
@@ -154,7 +178,11 @@ public class Character : NetworkBehaviour {
     [ClientRpc]
     void RpcDamage(int amount)
     {
-        //Do visual things
+        if (GetComponent<NetworkIdentity>().isClient)
+        {
+            ParticleSystem exp = GetComponentInChildren<ParticleSystem>();
+            exp.Play();
+        }
     }
 
     public void TakeDamage(int amount)
@@ -180,6 +208,7 @@ public class Character : NetworkBehaviour {
             }
             myNexus.charactersSpawned--;
             this.EnemyCharacter.isMoving = true;
+            this.EnemyCharacter.EnemyCharacter = null;
             this.EnemyCharacter = null;
             NetworkServer.Destroy(this.gameObject);
             return;

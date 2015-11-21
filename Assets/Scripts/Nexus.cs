@@ -23,6 +23,8 @@ public class Nexus : NetworkBehaviour {
 
     public bool isLeft = true;
 
+    public CharacterType spawnType = CharacterType.Solider;
+
     [SyncVar]
     public int Health = 25;
     [SyncVar]
@@ -93,6 +95,19 @@ public class Nexus : NetworkBehaviour {
                 }
             }
         }
+
+        if (Input.GetButtonDown("SpawnSolider"))
+        {
+            spawnType = CharacterType.Solider;
+        }
+        else if (Input.GetButtonDown("SpawnMage"))
+        {
+            //spawnType = CharacterType.Mage;
+        }
+        else if (Input.GetButtonDown("SpawnHacker"))
+        {
+
+        }
 	}
 
     [Command]
@@ -102,6 +117,8 @@ public class Nexus : NetworkBehaviour {
         Character charScript = character.GetComponent<Character>();
         charScript.isLeft = this.isLeft;
         charScript.myNexus = this;
+        charScript.lane = 1;
+        charScript.type = spawnType;
         NetworkServer.Spawn(character);
         this.charactersSpawned++;
         ModifyResources(-5);
@@ -114,6 +131,8 @@ public class Nexus : NetworkBehaviour {
         Character charScript = character.GetComponent<Character>();
         charScript.isLeft = this.isLeft;
         charScript.myNexus = this;
+        charScript.lane = 0;
+        charScript.type = spawnType;
         NetworkServer.Spawn(character);
         this.charactersSpawned++;
         ModifyResources(-5);
@@ -126,6 +145,8 @@ public class Nexus : NetworkBehaviour {
         Character charScript = character.GetComponent<Character>();
         charScript.isLeft = this.isLeft;
         charScript.myNexus = this;
+        charScript.lane = 2;
+        charScript.type = spawnType;
         NetworkServer.Spawn(character);
         this.charactersSpawned++;
         ModifyResources(-5);
